@@ -2,78 +2,11 @@
 // CITIES DATABASE & TIMEZONE DATA (DUAL COORDINATE SYSTEM)
 // ==========================================================================
 
-const CITIES_DB = [
-    { name: "Londres", country: "Reino Unido", timezone: "Europe/London", abbr: "LON", x: 395, y: 125, x_detail: 408, y_detail: 376 },
-    { name: "París", country: "Francia", timezone: "Europe/Paris", abbr: "PAR", x: 405, y: 132, x_detail: 418, y_detail: 388 },
-    { name: "Madrid", country: "España", timezone: "Europe/Madrid", abbr: "MAD", x: 393, y: 145, x_detail: 405, y_detail: 405 },
-    { name: "Berlín", country: "Alemania", timezone: "Europe/Berlin", abbr: "BER", x: 415, y: 125, x_detail: 428, y_detail: 380 },
-    { name: "Moscú", country: "Rusia", timezone: "Europe/Moscow", abbr: "MOW", x: 465, y: 110, x_detail: 472, y_detail: 358 },
-    { name: "Dubái", country: "Emiratos Árabes", timezone: "Asia/Dubai", abbr: "DXB", x: 495, y: 185, x_detail: 520, y_detail: 458 },
-    { name: "Nueva Delhi", country: "India", timezone: "Asia/Kolkata", abbr: "DEL", x: 535, y: 175, x_detail: 575, y_detail: 462 },
-    { name: "Singapur", country: "Singapur", timezone: "Asia/Singapore", abbr: "SIN", x: 575, y: 235, x_detail: 622, y_detail: 545 },
-    { name: "Tokio", country: "Japón", timezone: "Asia/Tokyo", abbr: "TYO", x: 635, y: 140, x_detail: 692, y_detail: 378 },
-    { name: "Sídney", country: "Australia", timezone: "Australia/Sydney", abbr: "SYD", x: 665, y: 325, x_detail: 752, y_detail: 648 },
-    { name: "Auckland", country: "Nueva Zelanda", timezone: "Pacific/Auckland", abbr: "AKL", x: 715, y: 355, x_detail: 792, y_detail: 678 },
-    { name: "El Cairo", country: "Egipto", timezone: "Africa/Cairo", abbr: "CAI", x: 445, y: 175, x_detail: 472, y_detail: 442 },
-    { name: "Nairobi", country: "Kenia", timezone: "Africa/Nairobi", abbr: "NBO", x: 460, y: 220, x_detail: 498, y_detail: 518 },
-    { name: "Ciudad del Cabo", country: "Sudáfrica", timezone: "Africa/Johannesburg", abbr: "CPT", x: 445, y: 295, x_detail: 468, y_detail: 624 },
-    { name: "Nueva York", country: "Estados Unidos", timezone: "America/New_York", abbr: "NYC", x: 230, y: 145, x_detail: 218, y_detail: 398 },
-    { name: "Los Ángeles", country: "Estados Unidos", timezone: "America/Los_Angeles", abbr: "LAX", x: 155, y: 155, x_detail: 135, y_detail: 422 },
-    { name: "Ciudad de México", country: "México", timezone: "America/Mexico_City", abbr: "MEX", x: 175, y: 185, x_detail: 155, y_detail: 478 },
-    { name: "Lima", country: "Perú", timezone: "America/Lima", abbr: "LIM", x: 225, y: 235, x_detail: 220, y_detail: 558 },
-    { name: "São Paulo", country: "Brasil", timezone: "America/Sao_Paulo", abbr: "SAO", x: 285, y: 265, x_detail: 295, y_detail: 588 },
-    { name: "Buenos Aires", country: "Argentina", timezone: "America/Argentina/Buenos_Aires", abbr: "BUE", x: 265, y: 305, x_detail: 270, y_detail: 648 },
-    { name: "Honolulu", country: "Hawái", timezone: "Pacific/Honolulu", abbr: "HNL", x: 80, y: 170, x_detail: 45, y_detail: 442 },
-    // Expanded Cities
-    { name: "Ottawa", country: "Canadá", timezone: "America/Toronto", abbr: "OTT", x: 205, y: 110, x_detail: 205, y_detail: 340 },
-    { name: "Bogotá", country: "Colombia", timezone: "America/Bogota", abbr: "BOG", x: 205, y: 230, x_detail: 205, y_detail: 508 },
-    { name: "Pekín", country: "China", timezone: "Asia/Shanghai", abbr: "PEK", x: 575, y: 160, x_detail: 620, y_detail: 432 },
-    { name: "Roma", country: "Italia", timezone: "Europe/Rome", abbr: "ROM", x: 410, y: 145, x_detail: 422, y_detail: 405 },
-    { name: "Estambul", country: "Turquía", timezone: "Europe/Istanbul", abbr: "IST", x: 445, y: 145, x_detail: 462, y_detail: 408 },
-    { name: "Riad", country: "Arabia Saudita", timezone: "Asia/Riyadh", abbr: "RUH", x: 465, y: 185, x_detail: 492, y_detail: 465 },
-    { name: "Santiago", country: "Chile", timezone: "America/Santiago", abbr: "SCL", x: 210, y: 300, x_detail: 215, y_detail: 624 },
-    { name: "Caracas", country: "Venezuela", timezone: "America/Caracas", abbr: "CCS", x: 220, y: 215, x_detail: 228, y_detail: 498 },
-    { name: "Estocolmo", country: "Suecia", timezone: "Europe/Stockholm", abbr: "STO", x: 415, y: 110, x_detail: 432, y_detail: 320 },
-    { name: "Yakarta", country: "Indonesia", timezone: "Asia/Jakarta", abbr: "JKT", x: 585, y: 245, x_detail: 610, y_detail: 545 }
-];
+const SECURE_DB_KEY = "CHRONOS_SHIELD_KEY_9988";
+function decryptPayload(e){const r=atob(e);let t="";for(let o=0;o<r.length;o++)t+=String.fromCharCode(r.charCodeAt(o)^SECURE_DB_KEY.charCodeAt(o%SECURE_DB_KEY.length));return JSON.parse(t)}
+const CITIES_DB = decryptPayload("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");
+const ISO_TO_TZ = decryptPayload("OGonPGx1c30SJSw3JSc+ZAs8KGZgV0ooan5vbD82fWloawQhIS0iJjhwdVBVWWFkcm0pLXFlc2oMMD4rLy5qFTBXXVdWYWRybSg9cWVzagwwPisvLmoJPktQSxpvaHAqPW1pf3ENPDcjNDpkCDg7S1BcGm9ocCsrbWl/cQ08NyM0OmQHPC1VUFYab2hwPTttaX9xDTw3IzQ6ZAg2LFpWTxpvaHAuK21pf3EJOiwtaxs+Jzg2GxUYGiomcHVubRIsOilmDiMoNCoxOH0VGRpLJGpob2wOIDYyZxosIiM+OyorOhsVGBopOHB1bm0SLDopZhEjLyYkZ3V/G1hNGnlocA47PCctMiQgJGMXJi8rPCYbFRgaLTJwdW5tAz4wIS8sL2sePiYyM1hXXBpvaHAqKW1pf3EJLzclJz5kBjg2S1YaFGNqOSpsdXN9Ei47LC8lcAUkMC1WW1Eab2hwNS9taX9xCS83JSc+ZA82N1hXVl0wKic9KW1/f3ElMWd2ZH0KKDwtUFpZFw4tKiYtIAwcOjwwZ2BkfSk3e2UZG3lVJjo7LC9gAD48FxkkOSgwaWl5fVhLGgJjahMiKz06PDJnCDcrITE/LDc+FntNXS0nIRAPJiE6IGplZW4nPml/eX14VF1KKiszYBogITA9PCZnYGR9KCp7ZRkbeVUmOjssL2ARMDQnPSRuaH9pJjd9AxkaeTAhM2AdJzIxNCAoLG5of2ksLX0DGRp9Njo9PytgATA+LWtpbGYrOWdjfxt8TUosODdgBzwnPj0qPCluaH9pNjh9AxkaeTAhM2AcJio+NyBraWxmPCdnY38beFVdMSExLmEcMjEnISgiI2Zza2cvOhsDGBoCJTc9JywycBApOyQvJSxpaXl9SlwaAmNqFzo8ICM6fBs9Ki8vNyQpNH0VGRpRJ2pob2wOIDYyZwMkJyUtPyR7Ig==");
 
-// ISO Code to Capital Timezone Mapping
-const ISO_TO_TZ = {
-    us: "America/New_York",
-    pe: "America/Lima",
-    gb: "Europe/London",
-    fr: "Europe/Paris",
-    es: "Europe/Madrid",
-    de: "Europe/Berlin",
-    ru: "Europe/Moscow",
-    ae: "Asia/Dubai",
-    in: "Asia/Kolkata",
-    sg: "Asia/Singapore",
-    jp: "Asia/Tokyo",
-    au: "Australia/Sydney",
-    nz: "Pacific/Auckland",
-    eg: "Africa/Cairo",
-    ke: "Africa/Nairobi",
-    za: "Africa/Johannesburg",
-    mx: "America/Mexico_City",
-    br: "America/Sao_Paulo",
-    ar: "America/Argentina/Buenos_Aires",
-    ca: "America/Toronto",
-    co: "America/Bogota",
-    cn: "Asia/Shanghai",
-    it: "Europe/Rome",
-    tr: "Europe/Istanbul",
-    sa: "Asia/Riyadh",
-    cl: "America/Santiago",
-    ve: "America/Caracas",
-    se: "Europe/Stockholm",
-    id: "Asia/Jakarta"
-};
-
-// Map View Mode Switch
-let useDetailedMapCoordinates = false;
-
-// SVG Continents data for fallback simplified world map layout
 const SVG_MAP_PATH = `
     <!-- North America & Greenland -->
     <path class="map-land" d="M 50,110 L 90,80 L 140,80 L 170,110 L 220,110 L 250,80 L 290,110 L 285,135 L 260,150 L 240,150 L 225,170 L 180,185 L 165,210 L 175,230 L 155,225 L 140,195 L 138,170 L 98,160 Z" />
