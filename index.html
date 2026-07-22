@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CHRONOS // Reloj Digital Mundial Premium</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Style Sheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="theme-cyberpunk">
+    <!-- Animated Particle Canvas Background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Ambient Background Lights -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i data-lucide="globe" class="logo-icon glow-icon"></i>
+                <div class="logo-text">
+                    <h1>CHRONOS</h1>
+                    <span>SISTEMA DE TIEMPO GLOBAL</span>
+                </div>
+            </div>
+
+            <!-- Controls and settings -->
+            <div class="header-controls">
+                <button id="btn-add-city" class="btn btn-primary">
+                    <i data-lucide="plus"></i>
+                    <span>Agregar Ciudad</span>
+                </button>
+
+                <div class="control-divider"></div>
+
+                <!-- Theme Switcher -->
+                <div class="theme-selector">
+                    <button class="theme-dot cyberpunk active" data-theme="cyberpunk" title="Cyberpunk Neon"></button>
+                    <button class="theme-dot solar" data-theme="solar" title="Solar Gold"></button>
+                    <button class="theme-dot deepspace" data-theme="deepspace" title="Deep Space"></button>
+                    <button class="theme-dot aurora" data-theme="aurora" title="Mint Aurora"></button>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <!-- Format Toggle -->
+                <div class="toggle-format">
+                    <span class="toggle-label">24H</span>
+                    <label class="switch">
+                        <input type="checkbox" id="format-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Left Panel: Main Time, Map & Planner -->
+            <section class="panel-left">
+                <!-- Large Primary Clock -->
+                <div class="glass-card main-clock-card">
+                    <div class="card-header-minimal">
+                        <span class="badge status-live">● EN VIVO</span>
+                        <span id="main-timezone-label" class="timezone-name">Local Time</span>
+                    </div>
+                    
+                    <div class="main-clock-display">
+                        <div id="main-time" class="digital-time">12:00:00</div>
+                        <div id="main-ampm" class="ampm-indicator">PM</div>
+                    </div>
+                    
+                    <div class="main-clock-details">
+                        <div class="detail-item">
+                            <i data-lucide="calendar" class="detail-icon"></i>
+                            <span id="main-date" class="detail-text">Miércoles, 22 de Julio de 2026</span>
+                        </div>
+                        <div class="detail-item">
+                            <i data-lucide="map-pin" class="detail-icon"></i>
+                            <span id="main-city-country" class="detail-text">Lima, Perú</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Day Progress Bar -->
+                    <div class="progress-container">
+                        <div class="progress-labels">
+                            <span>Progreso del Día</span>
+                            <span id="day-progress-percent">50%</span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div id="day-progress-fill" class="progress-bar-fill" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive SVG Map Panel -->
+                <div class="glass-card map-card">
+                    <div class="card-header">
+                        <h2>
+                            <i data-lucide="map" class="header-icon"></i>
+                            Mapa de Monitoreo Global con Horas en Vivo
+                        </h2>
+                        <span class="card-subtitle">Zonas de operaciones con reloj activo en tiempo real para cada ciudad</span>
+                    </div>
+                    <div class="map-wrapper">
+                        <!-- Custom styled world map container -->
+                        <div id="world-map-svg-container">
+                            <!-- SVG map will be rendered here dynamically with interactive points and live times -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meeting Planner / Timezone Converter -->
+                <div class="glass-card converter-card">
+                    <div class="card-header">
+                        <h2>
+                            <i data-lucide="sliders" class="header-icon"></i>
+                            Planificador de Reuniones Globales
+                        </h2>
+                        <span class="card-subtitle">Desliza para calcular compatibilidad horaria</span>
+                    </div>
+                    <div class="converter-slider-container">
+                        <div class="slider-header">
+                            <span>Hora seleccionada:</span>
+                            <span id="selected-slider-time" class="highlight-val">12:00 PM</span>
+                        </div>
+                        <input type="range" id="meeting-slider" min="0" max="23" value="12" class="custom-range-slider">
+                        <div class="slider-marks">
+                            <span>00h</span><span>04h</span><span>08h</span><span>12h</span><span>16h</span><span>20h</span><span>23h</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Compare list -->
+                    <div id="converter-comparison-list" class="comparison-list">
+                        <!-- Clocks dynamically appended here for comparative view -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: World Grid -->
+            <section class="panel-right">
+                <div class="grid-header">
+                    <h2>
+                        <i data-lucide="clock" class="header-icon"></i>
+                        Relojes del Mundo
+                    </h2>
+                    <span id="clocks-count" class="badge">3 Ciudades</span>
+                </div>
+
+                <!-- World Clocks Grid -->
+                <div id="world-clocks-grid" class="world-clocks-grid">
+                    <!-- Dynamic clock cards go here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Dashboard: Time Tools (Alarm, Stopwatch, Timer) -->
+        <footer class="app-tools glass-card">
+            <!-- Tabs Header -->
+            <div class="tools-tabs">
+                <button class="tab-btn active" data-tab="tab-alarms">
+                    <i data-lucide="bell" class="tab-icon"></i>
+                    <span>Alarmas</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-stopwatch">
+                    <i data-lucide="timer" class="tab-icon"></i>
+                    <span>Cronómetro</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-countdown">
+                    <i data-lucide="hourglass" class="tab-icon"></i>
+                    <span>Temporizador</span>
+                </button>
+            </div>
+
+            <!-- Tabs Content -->
+            <div class="tab-panels">
+                <!-- Tab: Alarms -->
+                <div id="tab-alarms" class="tab-content active">
+                    <div class="alarms-layout">
+                        <div class="alarm-controls">
+                            <h3>Nueva Alarma</h3>
+                            <form id="alarm-form" class="glass-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="alarm-time">Hora</label>
+                                        <input type="time" id="alarm-time" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="alarm-city">Ciudad / Zona</label>
+                                        <select id="alarm-city">
+                                            <option value="local">Hora Local</option>
+                                            <!-- Rest of cities will load dynamically -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="alarm-sound">Sonido</label>
+                                        <select id="alarm-sound">
+                                            <option value="retro-synth">Retro Synth (Estilo Cyber)</option>
+                                            <option value="digital-pulse">Pulso Digital</option>
+                                            <option value="sci-fi-alert">Alerta de Nave</option>
+                                            <option value="melodic">Melodía Suave</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="alarm-label">Etiqueta</label>
+                                        <input type="text" id="alarm-label" placeholder="Reunión, Despertar...">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-secondary w-full">
+                                    <i data-lucide="bell-plus"></i>
+                                    <span>Programar Alarma</span>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="alarm-list-container">
+                            <h3>Alarmas Activas</h3>
+                            <div id="active-alarms-list" class="active-alarms-list">
+                                <!-- Active alarm cards append here -->
+                                <div class="empty-state">
+                                    <i data-lucide="bell-off"></i>
+                                    <p>No hay alarmas programadas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Stopwatch -->
+                <div id="tab-stopwatch" class="tab-content">
+                    <div class="stopwatch-layout">
+                        <!-- Giant stopwatch time -->
+                        <div class="stopwatch-display-container">
+                            <div id="stopwatch-time" class="digital-time-large">00:00:00<span class="ms-part">.00</span></div>
+                            <div class="stopwatch-buttons">
+                                <button id="sw-btn-start" class="btn btn-success">
+                                    <i data-lucide="play"></i>
+                                    <span>Iniciar</span>
+                                </button>
+                                <button id="sw-btn-lap" class="btn btn-info" disabled>
+                                    <i data-lucide="flag"></i>
+                                    <span>Vuelta</span>
+                                </button>
+                                <button id="sw-btn-reset" class="btn btn-danger">
+                                    <i data-lucide="rotate-ccw"></i>
+                                    <span>Resetear</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Laps table -->
+                        <div class="laps-container">
+                            <h3>Registro de Laps</h3>
+                            <div class="laps-table-wrapper">
+                                <table class="laps-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Lap #</th>
+                                            <th>Tiempo de Lap</th>
+                                            <th>Tiempo Acumulado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="laps-list-body">
+                                        <!-- Laps dynamically added -->
+                                        <tr class="empty-row">
+                                            <td colspan="3">Inicia el cronómetro para registrar vueltas</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Countdown Timer -->
+                <div id="tab-countdown" class="tab-content">
+                    <div class="countdown-layout">
+                        <!-- Presets and Input side -->
+                        <div class="timer-setup">
+                            <h3>Configurar Cuenta Regresiva</h3>
+                            <div class="timer-presets">
+                                <button class="btn btn-preset" data-seconds="60">1 Min</button>
+                                <button class="btn btn-preset" data-seconds="300">5 Min</button>
+                                <button class="btn btn-preset" data-seconds="900">15 Min</button>
+                                <button class="btn btn-preset" data-seconds="1800">30 Min</button>
+                                <button class="btn btn-preset" data-seconds="3600">1 Hora</button>
+                            </div>
+                            <div class="timer-custom-inputs">
+                                <div class="time-input-group">
+                                    <input type="number" id="timer-hours" min="0" max="99" value="0" placeholder="HH">
+                                    <span>h</span>
+                                </div>
+                                <div class="time-input-group">
+                                    <input type="number" id="timer-minutes" min="0" max="59" value="5" placeholder="MM">
+                                    <span>m</span>
+                                </div>
+                                <div class="time-input-group">
+                                    <input type="number" id="timer-seconds" min="0" max="59" value="0" placeholder="SS">
+                                    <span>s</span>
+                                </div>
+                            </div>
+                            <div class="timer-actions">
+                                <button id="timer-btn-set" class="btn btn-secondary w-full">Establecer Tiempo</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Visual Display side -->
+                        <div class="timer-display-panel">
+                            <!-- Circular SVG progress meter -->
+                            <div class="timer-circular-progress">
+                                <svg class="timer-svg" viewBox="0 0 100 100">
+                                    <circle class="timer-circle-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle id="timer-circle-fill" class="timer-circle-fill" cx="50" cy="50" r="45" stroke-dasharray="282.7" stroke-dashoffset="0"></circle>
+                                </svg>
+                                <div class="timer-text-container">
+                                    <div id="timer-time-display" class="timer-digital">05:00</div>
+                                    <div id="timer-label" class="timer-sub-text">Listo</div>
+                                </div>
+                            </div>
+                            
+                            <div class="timer-buttons">
+                                <button id="timer-btn-start" class="btn btn-success" disabled>
+                                    <i data-lucide="play"></i>
+                                    <span>Iniciar</span>
+                                </button>
+                                <button id="timer-btn-reset" class="btn btn-danger">
+                                    <i data-lucide="rotate-ccw"></i>
+                                    <span>Reiniciar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modal: Search & Add Cities -->
+    <div id="modal-city-search" class="modal">
+        <div class="modal-content glass-card animate-zoom">
+            <div class="modal-header">
+                <h2>Buscar Ciudad Mundial</h2>
+                <button id="modal-close-btn" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="city-search-input" placeholder="Escribe el nombre de la ciudad (ej: Tokyo, Nueva York, Madrid...)" autofocus autocomplete="off">
+                </div>
+                <div id="search-results-list" class="search-results-list">
+                    <!-- Search results dynamically generated -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alarm Modal Screen Overlays -->
+    <div id="alarm-overlay" class="alarm-overlay">
+        <div class="alarm-alert-card glass-card">
+            <div class="alarm-bell-icon-pulse">
+                <i data-lucide="bell"></i>
+            </div>
+            <h2 id="alarm-alert-title">¡ALARMA SONANDO!</h2>
+            <p id="alarm-alert-msg">Reunión en Nueva York</p>
+            <p id="alarm-alert-time" class="alarm-alert-digital">08:00 AM</p>
+            <button id="alarm-btn-dismiss" class="btn btn-danger w-full">Detener Alarma</button>
+        </div>
+    </div>
+
+    <!-- Map data -->
+    <script src="mapdata.js"></script>
+    <!-- Core Script -->
+    <script src="script.js"></script>
+</body>
+</html>
