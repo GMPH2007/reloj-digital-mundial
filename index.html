@@ -52,6 +52,14 @@
 
                 <div class="control-divider"></div>
 
+                <!-- Vault Button -->
+                <button id="btn-vault-toggle" class="btn btn-secondary btn-vault">
+                    <i data-lucide="shield-alert" id="vault-header-icon" class="vault-status-icon"></i>
+                    <span>Bóveda</span>
+                </button>
+
+                <div class="control-divider"></div>
+
                 <!-- Format Toggle -->
                 <div class="toggle-format">
                     <span class="toggle-label">24H</span>
@@ -72,6 +80,7 @@
                     <div class="card-header-minimal">
                         <span class="badge status-live">● EN VIVO</span>
                         <span id="main-timezone-label" class="timezone-name">Local Time</span>
+                        <button type="button" class="btn-info-sticker" data-sticker="main-clock" title="Ver Info"><i data-lucide="help-circle"></i></button>
                     </div>
                     
                     <div class="main-clock-display">
@@ -105,10 +114,13 @@
                 <!-- Interactive SVG Map Panel -->
                 <div class="glass-card map-card">
                     <div class="card-header">
-                        <h2>
-                            <i data-lucide="map" class="header-icon"></i>
-                            Mapa de Monitoreo Global con Horas en Vivo
-                        </h2>
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <h2>
+                                <i data-lucide="map" class="header-icon"></i>
+                                Mapa de Monitoreo Global con Horas en Vivo
+                            </h2>
+                            <button type="button" class="btn-info-sticker" data-sticker="global-map" title="Ver Info"><i data-lucide="help-circle"></i></button>
+                        </div>
                         <span class="card-subtitle">Zonas de operaciones con reloj activo en tiempo real para cada ciudad</span>
                     </div>
                     <div class="map-wrapper">
@@ -122,10 +134,13 @@
                 <!-- Meeting Planner / Timezone Converter -->
                 <div class="glass-card converter-card">
                     <div class="card-header">
-                        <h2>
-                            <i data-lucide="sliders" class="header-icon"></i>
-                            Planificador de Reuniones Globales
-                        </h2>
+                        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                            <h2>
+                                <i data-lucide="sliders" class="header-icon"></i>
+                                Planificador de Reuniones Globales
+                            </h2>
+                            <button type="button" class="btn-info-sticker" data-sticker="meeting-planner" title="Ver Info"><i data-lucide="help-circle"></i></button>
+                        </div>
                         <span class="card-subtitle">Desliza para calcular compatibilidad horaria</span>
                     </div>
                     <div class="converter-slider-container">
@@ -149,10 +164,13 @@
             <!-- Right Panel: World Grid -->
             <section class="panel-right">
                 <div class="grid-header">
-                    <h2>
-                        <i data-lucide="clock" class="header-icon"></i>
-                        Relojes del Mundo
-                    </h2>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <h2>
+                            <i data-lucide="clock" class="header-icon"></i>
+                            Relojes del Mundo
+                        </h2>
+                        <button type="button" class="btn-info-sticker" data-sticker="world-clocks" title="Ver Info"><i data-lucide="help-circle"></i></button>
+                    </div>
                     <span id="clocks-count" class="badge">3 Ciudades</span>
                 </div>
 
@@ -179,6 +197,7 @@
                     <i data-lucide="hourglass" class="tab-icon"></i>
                     <span>Temporizador</span>
                 </button>
+                <button type="button" class="btn-info-sticker" data-sticker="time-tools" title="Ver Info" style="margin-left:auto;"><i data-lucide="help-circle"></i></button>
             </div>
 
             <!-- Tabs Content -->
@@ -374,6 +393,90 @@
             <p id="alarm-alert-msg">Reunión en Nueva York</p>
             <p id="alarm-alert-time" class="alarm-alert-digital">08:00 AM</p>
             <button id="alarm-btn-dismiss" class="btn btn-danger w-full">Detener Alarma</button>
+        </div>
+    <!-- Floating Info Sticker Tooltip -->
+    <div id="sticker-tooltip-card" class="sticker-card hidden">
+        <div class="sticker-header">
+            <h4 id="sticker-title">Funcionalidad</h4>
+            <button id="btn-close-sticker" class="btn-close">&times;</button>
+        </div>
+        <p id="sticker-description">Descripción detallada de la función.</p>
+    </div>
+
+    <!-- Modal: Bóveda de Seguridad (Criptografía) -->
+    <div id="modal-vault" class="modal">
+        <div class="modal-content glass-card animate-zoom">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="shield-check" class="header-icon neon-blue"></i>
+                    Bóveda Criptográfica (Zero-Knowledge)
+                </h2>
+                <button id="vault-close-btn" class="btn-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="vault-info-text">
+                    Protege tu base de datos de relojes y alarmas. Al activar el cifrado, tus datos se encriptarán en tu navegador usando **AES-GCM de 256 bits**. Ni los desarrolladores ni ningún hacker podrán ver la información sin tu contraseña.
+                </p>
+                
+                <div class="vault-form-box">
+                    <div id="vault-status-box" class="vault-status-indicator unlocked">
+                        <span>ESTADO: <strong id="vault-status-text">DESPROTEGIDO (SIN CIFRAR)</strong></span>
+                    </div>
+                    
+                    <div id="vault-setup-form">
+                        <div class="form-group">
+                            <label for="vault-password">Contraseña de Seguridad (Solo números para usar con teclado en pantalla)</label>
+                            <input type="password" id="vault-password" placeholder="Ingresa una clave segura (ej: 1234)..." inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <button id="btn-enable-vault" class="btn btn-primary w-full">
+                            <i data-lucide="lock"></i>
+                            <span>Activar Cifrado Militar</span>
+                        </button>
+                    </div>
+                    
+                    <div id="vault-disable-form" class="hidden">
+                        <button id="btn-disable-vault" class="btn btn-danger w-full">
+                            <i data-lucide="unlock"></i>
+                            <span>Desactivar Cifrado y Descifrar Datos</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bóveda Lock Screen Overlay -->
+    <div id="vault-lock-screen" class="vault-lock-screen hidden">
+        <div class="vault-lock-card glass-card animate-zoom">
+            <div class="vault-lock-header">
+                <i data-lucide="shield-alert" class="lock-icon pulsing-red"></i>
+                <h2>BASE DE DATOS CIFRADA</h2>
+                <p>Ingrese la contraseña de seguridad para desencriptar el sistema</p>
+            </div>
+            
+            <div class="vault-lock-input-group">
+                <input type="password" id="vault-unlock-password" placeholder="Contraseña de la bóveda..." readonly>
+                <div id="vault-lock-error" class="lock-error-msg hidden">CONTRASENA INCORRECTA. INTENTE DE NUEVO.</div>
+            </div>
+            
+            <div class="vault-keypad">
+                <button type="button" class="key-btn" data-val="1">1</button>
+                <button type="button" class="key-btn" data-val="2">2</button>
+                <button type="button" class="key-btn" data-val="3">3</button>
+                <button type="button" class="key-btn" data-val="4">4</button>
+                <button type="button" class="key-btn" data-val="5">5</button>
+                <button type="button" class="key-btn" data-val="6">6</button>
+                <button type="button" class="key-btn" data-val="7">7</button>
+                <button type="button" class="key-btn" data-val="8">8</button>
+                <button type="button" class="key-btn" data-val="9">9</button>
+                <button type="button" class="key-btn danger" id="key-btn-clear">C</button>
+                <button type="button" class="key-btn" data-val="0">0</button>
+                <button type="button" class="key-btn success" id="key-btn-enter">OK</button>
+            </div>
+            
+            <div class="high-tech-terminal">
+                <span class="term-prompt">&gt;_ CRYPTO STATUS: SHA-256 PBKDF2 ACTIVE // AES-GCM 256-BIT ENCRYPTION SECURE</span>
+            </div>
         </div>
     </div>
 

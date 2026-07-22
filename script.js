@@ -134,22 +134,36 @@ let mouse = { x: null, y: null, radius: 100 };
 // ==========================================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-    loadStateFromStorage();
+    // Check if vault is active
+    const vaultEnabled = localStorage.getItem("chronos_vault_enabled") === "true";
+    if (vaultEnabled) {
+        state.vaultEnabled = true;
+        // Display lock screen
+        document.getElementById("vault-lock-screen").classList.remove("hidden");
+    } else {
+        // Vault is not enabled, load standard plain storage
+        loadStateFromStorage();
+    }
+
     initTheme();
     initLucide();
     initMap();
     initParticleCanvas();
     setupEventListeners();
+    initStickers();
+    initVaultEvents();
     
     // Start main time render loops
     requestAnimationFrame(updateTimeLoop);
     
-    // Sync lists
-    updateWorldClocksGrid();
-    updateAlarmsList();
-    populateSelectDropdowns();
-    updateTimerDisplay();
-    updatePlannerComparison();
+    // Sync lists if not locked (if locked, these will sync after decrypting)
+    if (!vaultEnabled) {
+        updateWorldClocksGrid();
+        updateAlarmsList();
+        populateSelectDropdowns();
+        updateTimerDisplay();
+        updatePlannerComparison();
+    }
 });
 
 // Load storage
@@ -162,6 +176,7 @@ function loadStateFromStorage() {
             state.use24h = parsed.use24h !== undefined ? parsed.use24h : true;
             state.activeClocks = parsed.activeClocks || ["Europe/London", "America/New_York", "Asia/Tokyo"];
             state.alarms = parsed.alarms || [];
+            state.vaultEnabled = false;
         } catch (e) {
             console.error("Error parsing local storage state", e);
         }
@@ -169,14 +184,38 @@ function loadStateFromStorage() {
 }
 
 // Save storage
+let sessionPassword = "";
+
 function saveStateToStorage() {
-    const toSave = {
-        theme: state.theme,
-        use24h: state.use24h,
-        activeClocks: state.activeClocks,
-        alarms: state.alarms
-    };
-    localStorage.setItem("chronos_state", JSON.stringify(toSave));
+    try {
+        if (state.vaultEnabled && sessionPassword) {
+            const plainJson = JSON.stringify({
+                theme: state.theme,
+                use24h: state.use24h,
+                activeClocks: state.activeClocks,
+                alarms: state.alarms
+            });
+            VaultCrypto.encrypt(plainJson, sessionPassword).then(encryptedStr => {
+                localStorage.setItem("chronos_vault_enabled", "true");
+                localStorage.setItem("chronos_vault_payload", encryptedStr);
+                // Clear plain state to be 100% secure
+                localStorage.removeItem("chronos_state");
+            });
+        } else {
+            localStorage.setItem("chronos_vault_enabled", "false");
+            localStorage.removeItem("chronos_vault_payload");
+            
+            const plainState = {
+                theme: state.theme,
+                use24h: state.use24h,
+                activeClocks: state.activeClocks,
+                alarms: state.alarms
+            };
+            localStorage.setItem("chronos_state", JSON.stringify(plainState));
+        }
+    } catch (e) {
+        console.error("Error saving state:", e);
+    }
 }
 
 // Init Lucide Icons
@@ -1683,4 +1722,296 @@ function setupEventListeners() {
             audioCtx.resume();
         }
     }, { once: true });
+}
+
+// ==========================================================================
+// INTERACTIVE HELP STICKERS ("PEGATINAS")
+// ==========================================================================
+
+const STICKERS_DB = {
+    "main-clock": {
+        title: "Reloj Principal En Vivo",
+        desc: "Muestra la hora exacta local de tu dispositivo. Incluye un indicador de progreso solar diario del 0% al 100% que representa el transcurso del día actual."
+    },
+    "global-map": {
+        title: "Mapa de Fronteras Interactivo",
+        desc: "Pasa el mouse sobre cualquier país para resaltar sus fronteras en neón. Haz clic en un país para encender su contorno permanentemente y añadir su reloj al panel de relojes activos."
+    },
+    "meeting-planner": {
+        title: "Planificador de Reuniones",
+        desc: "Desliza la barra para seleccionar una hora local futura. El sistema recalcula la hora equivalente de todos tus relojes mundiales activos, clasificando las horas en Laboral, Personal o Sueño."
+    },
+    "world-clocks": {
+        title: "Relojes del Mundo",
+        desc: "Muestra el estado del tiempo simulado, diferencia horaria (+/- horas) con respecto a tu hora local y hora en vivo de tus ubicaciones seleccionadas en tarjetas de diseño futurista."
+    },
+    "time-tools": {
+        title: "Herramientas de Precisión",
+        desc: "Cambia entre pestañas para usar alarmas programadas, un cronómetro de milisegundos con registro de vueltas (laps) o un temporizador de cuenta regresiva con animación de anillo de progreso."
+    }
+};
+
+function initStickers() {
+    const tooltip = document.getElementById("sticker-tooltip-card");
+    const titleEl = document.getElementById("sticker-title");
+    const descEl = document.getElementById("sticker-description");
+    const closeBtn = document.getElementById("btn-close-sticker");
+    
+    if (!tooltip || !closeBtn) return;
+    
+    closeBtn.addEventListener("click", () => {
+        tooltip.classList.add("hidden");
+    });
+    
+    document.querySelectorAll(".btn-info-sticker").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const stickerId = btn.dataset.sticker;
+            const data = STICKERS_DB[stickerId];
+            if (data) {
+                titleEl.textContent = data.title;
+                descEl.textContent = data.desc;
+                
+                // Position tooltip near the button
+                const rect = btn.getBoundingClientRect();
+                let left = rect.left + window.scrollX - 140;
+                let top = rect.bottom + window.scrollY + 8;
+                
+                // Prevent overflow
+                if (left < 10) left = 10;
+                if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+                
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+                tooltip.classList.remove("hidden");
+            }
+        });
+    });
+    
+    // Close on clicking outside
+    document.addEventListener("click", (e) => {
+        if (!tooltip.classList.contains("hidden") && !tooltip.contains(e.target) && !e.target.closest(".btn-info-sticker")) {
+            tooltip.classList.add("hidden");
+        }
+    });
+}
+
+// ==========================================================================
+// CRYPTOGRAPHIC VAULT MANAGER (ZERO-KNOWLEDGE AES-256-GCM)
+// ==========================================================================
+
+const VaultCrypto = {
+    async deriveKey(password, salt) {
+        const encoder = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+            "raw",
+            encoder.encode(password),
+            "PBKDF2",
+            false,
+            ["deriveKey"]
+        );
+        return crypto.subtle.deriveKey(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: 100000,
+                hash: "SHA-256"
+            },
+            baseKey,
+            { name: "AES-GCM", length: 256 },
+            false,
+            ["encrypt", "decrypt"]
+        );
+    },
+    
+    async encrypt(plaintext, password) {
+        const encoder = new TextEncoder();
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await this.deriveKey(password, salt);
+        const encrypted = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            encoder.encode(plaintext)
+        );
+        
+        const packed = {
+            salt: btoa(String.fromCharCode(...salt)),
+            iv: btoa(String.fromCharCode(...iv)),
+            ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+        };
+        return JSON.stringify(packed);
+    },
+    
+    async decrypt(packedJson, password) {
+        const decoder = new TextDecoder();
+        const packed = JSON.parse(packedJson);
+        const salt = new Uint8Array([...atob(packed.salt)].map(c => c.charCodeAt(0)));
+        const iv = new Uint8Array([...atob(packed.iv)].map(c => c.charCodeAt(0)));
+        const ciphertext = new Uint8Array([...atob(packed.ciphertext)].map(c => c.charCodeAt(0)));
+        
+        const key = await this.deriveKey(password, salt);
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            key,
+            ciphertext
+        );
+        return decoder.decode(decrypted);
+    }
+};
+
+function openVaultModal() {
+    const modal = document.getElementById("modal-vault");
+    if (!modal) return;
+    
+    const statusBox = document.getElementById("vault-status-box");
+    const statusText = document.getElementById("vault-status-text");
+    const setupForm = document.getElementById("vault-setup-form");
+    const disableForm = document.getElementById("vault-disable-form");
+    const passInput = document.getElementById("vault-password");
+    
+    passInput.value = "";
+    modal.classList.add("active");
+    
+    if (state.vaultEnabled) {
+        statusBox.className = "vault-status-indicator locked";
+        statusText.textContent = "CIFRADO ACTIVO (PROTEGIDO)";
+        setupForm.classList.add("hidden");
+        disableForm.classList.remove("hidden");
+    } else {
+        statusBox.className = "vault-status-indicator unlocked";
+        statusText.textContent = "DESPROTEGIDO (SIN CIFRAR)";
+        setupForm.classList.remove("hidden");
+        disableForm.classList.add("hidden");
+    }
+}
+
+function initVaultEvents() {
+    // Header Vault Button Click
+    document.getElementById("btn-vault-toggle").addEventListener("click", openVaultModal);
+    
+    // Modal Close
+    document.getElementById("vault-close-btn").addEventListener("click", () => {
+        document.getElementById("modal-vault").classList.remove("active");
+    });
+    
+    // Setup Lock Screen keypad click events
+    const unlockPassInput = document.getElementById("vault-unlock-password");
+    const lockErrorMsg = document.getElementById("vault-lock-error");
+    
+    document.querySelectorAll(".vault-keypad .key-btn[data-val]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            lockErrorMsg.classList.add("hidden");
+            unlockPassInput.value += btn.dataset.val;
+        });
+    });
+    
+    document.getElementById("key-btn-clear").addEventListener("click", () => {
+        unlockPassInput.value = "";
+        lockErrorMsg.classList.add("hidden");
+    });
+    
+    document.getElementById("key-btn-enter").addEventListener("click", handleVaultUnlockSubmit);
+    
+    // Handle Enter Key inside password field on lock screen
+    unlockPassInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handleVaultUnlockSubmit();
+    });
+
+    // Vault Enable Button
+    document.getElementById("btn-enable-vault").addEventListener("click", async () => {
+        const password = document.getElementById("vault-password").value.trim();
+        if (!password) {
+            alert("Por favor ingresa una clave de seguridad.");
+            return;
+        }
+        
+        // Enable Vault
+        state.vaultEnabled = true;
+        sessionPassword = password;
+        
+        // Save Encrypted
+        saveStateToStorage();
+        
+        // Update header icon indicator
+        const hdrIcon = document.getElementById("vault-header-icon");
+        hdrIcon.setAttribute("data-lucide", "shield-check");
+        initLucide();
+        document.getElementById("btn-vault-toggle").classList.add("active-vault");
+        
+        document.getElementById("modal-vault").classList.remove("active");
+        alert("Bóveda de Seguridad activada con éxito. Todos tus datos han sido cifrados matemáticamente en tu navegador.");
+    });
+    
+    // Vault Disable Button
+    document.getElementById("btn-disable-vault").addEventListener("click", () => {
+        if (confirm("¿Estás seguro de desactivar el cifrado? Tus datos volverán a guardarse en texto plano en el navegador.")) {
+            state.vaultEnabled = false;
+            sessionPassword = "";
+            
+            // Save plain
+            saveStateToStorage();
+            
+            // Update header icon indicator
+            const hdrIcon = document.getElementById("vault-header-icon");
+            hdrIcon.setAttribute("data-lucide", "shield-alert");
+            initLucide();
+            document.getElementById("btn-vault-toggle").classList.remove("active-vault");
+            
+            document.getElementById("modal-vault").classList.remove("active");
+            alert("Bóveda de Seguridad desactivada.");
+        }
+    });
+}
+
+async function handleVaultUnlockSubmit() {
+    const password = document.getElementById("vault-unlock-password").value;
+    const lockErrorMsg = document.getElementById("vault-lock-error");
+    const lockScreen = document.getElementById("vault-lock-screen");
+    const payload = localStorage.getItem("chronos_vault_payload");
+    
+    if (!payload) {
+        // Vault is enabled but payload is empty? Decrypt nothing
+        state.vaultEnabled = false;
+        saveStateToStorage();
+        lockScreen.classList.add("hidden");
+        return;
+    }
+    
+    try {
+        const decryptedJson = await VaultCrypto.decrypt(payload, password);
+        const parsedState = JSON.parse(decryptedJson);
+        
+        // Merge state
+        state.theme = parsedState.theme || state.theme;
+        state.use24h = parsedState.use24h !== undefined ? parsedState.use24h : state.use24h;
+        state.activeClocks = parsedState.activeClocks || state.activeClocks;
+        state.alarms = parsedState.alarms || state.alarms;
+        state.vaultEnabled = true;
+        
+        sessionPassword = password;
+        
+        // Update dashboard lists
+        initTheme();
+        tickWorldClocks();
+        updateWorldClocksGrid();
+        updatePlannerComparison();
+        updateAlarmsList();
+        populateSelectDropdowns();
+        renderMapMarkers();
+        
+        // Active Vault UI Class
+        const hdrIcon = document.getElementById("vault-header-icon");
+        hdrIcon.setAttribute("data-lucide", "shield-check");
+        initLucide();
+        document.getElementById("btn-vault-toggle").classList.add("active-vault");
+        
+        // Unlock Screen Animation
+        lockScreen.classList.add("hidden");
+        console.log("Vault decrypted and unlocked successfully.");
+    } catch (e) {
+        console.warn("Failed to decrypt vault database:", e);
+        lockErrorMsg.classList.remove("hidden");
+        document.getElementById("vault-unlock-password").value = "";
+    }
 }
