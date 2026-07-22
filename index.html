@@ -481,6 +481,31 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Cloud database backup segment -->
+                <div class="vault-form-box" style="margin-top: 16px; border-color: rgba(0, 242, 254, 0.25);">
+                    <h3 style="font-size: 0.9rem; text-transform: uppercase; color: var(--color-accent-2); margin-bottom: 8px; display:flex; align-items:center; gap:6px;">
+                        <i data-lucide="cloud" style="width:16px; height:16px;"></i>
+                        Copia de Seguridad en la Nube (GitHub Gist)
+                    </h3>
+                    <p class="vault-info-text" style="margin-bottom: 12px; font-size: 0.75rem;">
+                        Guarda tu configuración cifrada en tu cuenta de GitHub de forma privada. Incluso si eliminas tu historial, podrás restaurar tus relojes y alarmas en cualquier momento.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button id="btn-cloud-upload" class="btn btn-secondary" style="border-color: rgba(0, 242, 254, 0.4); color: var(--color-accent-2);">
+                            <i data-lucide="cloud-lightning"></i>
+                            <span>Subir a la Nube</span>
+                        </button>
+                        <button id="btn-cloud-download" class="btn btn-secondary" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+                            <i data-lucide="cloud-download"></i>
+                            <span>Bajar de la Nube</span>
+                        </button>
+                    </div>
+                    <div id="cloud-sync-status" style="margin-top: 8px; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; color: var(--color-text-muted); text-align: center;">
+                        ESTADO DE NUBE: SIN SINCRONIZAR
+                    </div>
+                </div>
             </div>
         </div>
     </div>
